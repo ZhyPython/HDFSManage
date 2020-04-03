@@ -1,26 +1,53 @@
 import json
 import re
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
 
 import requests
+from django.http import HttpResponse
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 from .hdfs_monitor import HDFSMonitor
 from .ssh import SSHClient
 
 
-# namenode1和namenode2的ip
-nn1 = "http://192.168.112.101:9870/jmx"
-nn2 = "http://192.168.112.102:9870/jmx"
-
 # Create your views here.
+@api_view(['PUT'])
+def upload_file(request):
+    """上传文件到hdfs
+    """
+    context = {}
+    # 用requests库将文件上传到hdfs中
+    url = "http://" + "192.168.112.101" + ":" + "9870" + request.data['url']
+    response = requests.put(url, data=request.data['file'])
+    if response.status_code == 201:
+        context.update({
+            'info': 'success'
+        })
+    else:
+        context.update({
+            'info': 'error'
+        })
+    return Response(context)
+
+@api_view(['GET'])
+def download_file(request):
+    """下载文件
+    """
+    url = "http://" + "192.168.112.101" + ":" + "9870" + request.GET['url']
+    response = requests.get(url)
+    return HttpResponse(response.content, content_type="application/octet-stream")
+
+# namenode1和namenode2的ip
+nn1 = "http://192.168.112.101:9870"
+nn2 = "http://192.168.112.102:9870"
+
 @api_view(['GET'])
 def get_active_namenode(request):
     """获取active状态的namenode
     """
     context = {}
-    response1 = requests.get(nn1 + "?qry=Hadoop:service=NameNode,name=NameNodeStatus")
-    response2 = requests.get(nn2 + "?qry=Hadoop:service=NameNode,name=NameNodeStatus")
+    response1 = requests.get(nn1 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus")
+    response2 = requests.get(nn2 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus")
     if json.loads(response1.content)['beans'][0]['State'] == 'active':
         context.update({
             "active": "nn1"
@@ -61,18 +88,18 @@ def get_datanodes(request):
         "info": ""
     }
     # 获取active的节点
-    response1 = requests.get(nn1 + "?qry=Hadoop:service=NameNode,name=NameNodeStatus")
-    response2 = requests.get(nn2 + "?qry=Hadoop:service=NameNode,name=NameNodeStatus")
+    response1 = requests.get(nn1 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus")
+    response2 = requests.get(nn2 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus")
     if json.loads(response1.content)['beans'][0]['State'] == 'active':
         # 查询包含datanodes信息的jmx
-        info1 = requests.get(nn1 + "?qry=Hadoop:service=NameNode,name=NameNodeInfo")
+        info1 = requests.get(nn1 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo")
         data = json.loads(info1.content)['beans'][0]['LiveNodes']
         # 获取的data为str，还需要进行 json.loads()才能进行解析
         dn_info = parse_dn_info(json.loads(data))
         context["info"] = dn_info
     elif json.loads(response2.content)['beans'][0]['State'] == "active":
         # 查询包含datanodes信息的jmx
-        info2 = requests.get(nn2 + "?qry=Hadoop:service=NameNode,name=NameNodeInfo")
+        info2 = requests.get(nn2 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo")
         data = json.loads(info2.content)['beans'][0]['LiveNodes']
         # 获取的data为str，还需要进行 json.loads()才能进行解析
         dn_info = parse_dn_info(json.loads(data))
