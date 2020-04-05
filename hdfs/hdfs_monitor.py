@@ -148,8 +148,9 @@ class HDFSMonitor:
             dic['displayName'] = cluster.display_name
             dic['name'] = cluster.name
             cluster_list.append(dic)
-        pprint(cluster_list)
-        return json.dumps(cluster_list, ensure_ascii=False)
+        # pprint(cluster_list)
+        # return json.dumps(cluster_list, ensure_ascii=False)
+        return cluster_list
 
     def list_namenodes(self, cluster_name):
         """获取namenodes
@@ -173,14 +174,14 @@ class HDFSMonitor:
             dic['hostName'] = response.hostname
             dic['hostIP'] = response.ip_address
             namenode_list.append(dic)
-        pprint(namenode_list)
+        # pprint(namenode_list)
         return namenode_list
 
     def list_datanodes(self):
         """获取集群中的datanodes
         """
         api_response = self._cluster_api_instance.list_hosts('Cluster 1')
-        pprint(api_response)
+        # pprint(api_response)
         return api_response
 
     def hdfs_metrics(self, key):

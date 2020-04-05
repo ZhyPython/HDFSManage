@@ -26,7 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', login_view, name="login"),
     path('valid/', valid, name="valid"),
-    path('delete/', delete_session, name="delete_session"),
+    path('delete_session/', delete_session, name="delete_session"),
     path('signup/', sign_up, name="sign_up"),
     path('', include(hdfs_urls)),
 ]
