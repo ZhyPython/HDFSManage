@@ -28,84 +28,84 @@ class HDFSMonitor:
             (
                 "配置的HDFS容量",
                 "SELECT dfs_capacity "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "GB"
             ),
         "dfs_capacity_used_non_hdfs":
             (
                 "使用的非 HDFS",
                 "SELECT dfs_capacity_used_non_hdfs "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "GB",
             ),
         "dfs_capacity_used":
             (
                 "使用的HDFS容量",
                 "SELECT dfs_capacity_used "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "GB"
             ),
         "total_bytes_read_rate_across_datanodes":
             (
                 "各 DataNodes 中的总读取的字节",
                 "SELECT total_bytes_read_rate_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "Bytes/second",
             ),
         "total_bytes_written_rate_across_datanodes":
             (
                 "各 DataNodes 中的总写入的字节",
                 "SELECT total_bytes_written_rate_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "Bytes/second",
             ),
         "total_blocks_read_rate_across_datanodes":
             (
                 "各 DataNodes 中的总读取块",
                 "SELECT total_blocks_read_rate_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "blocks/second",
             ),
         "total_blocks_written_rate_across_datanodes":
             (
                 "各 DataNodes 中的总已写入块",
                 "SELECT total_blocks_written_rate_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "blocks/second",
             ),
         "packet_ack_round_trip_time_nanos_avg_time_across_datanodes":
             (
                 "整个 DataNodes 中的数据包确认往返的平均时间",
                 "SELECT packet_ack_round_trip_time_nanos_avg_time_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "nanos",
             ),
         "send_data_packet_transfer_nanos_avg_time_across_datanodes":
             (
                 "整个 DataNodes 中的发送数据包传输的平均时间",
                 "SELECT send_data_packet_transfer_nanos_avg_time_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "us",
             ),
         "send_data_packet_blocked_on_network_nanos_avg_time_across_datanodes":
             (
                 "整个 DataNodes 中的发送网络阻止数据包的平均时间",
                 "SELECT send_data_packet_blocked_on_network_nanos_avg_time_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "us",
             ),
         "flush_nanos_rate_across_datanodes":
             (
                 "整个 DataNodes 中的磁盘刷新",
                 "SELECT flush_nanos_rate_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "operations/second",
             ),
         "flush_nanos_avg_time_across_datanodes":
             (
                 "整个 DataNodes 中的平均磁盘刷新时间",
                 "SELECT flush_nanos_avg_time_across_datanodes "\
-                "WHERE entityName = 'hdfs:nameservice1' AND category = SERVICE",
+                "WHERE clusterName = '{}' AND category = SERVICE",
                 "us",
             ),
     }
@@ -177,14 +177,14 @@ class HDFSMonitor:
         # pprint(namenode_list)
         return namenode_list
 
-    def list_datanodes(self):
-        """获取集群中的datanodes
-        """
-        api_response = self._cluster_api_instance.list_hosts('Cluster 1')
-        # pprint(api_response)
-        return api_response
+    # def list_datanodes(self, cluster_name):
+    #     """获取集群中的datanodes
+    #     """
+    #     api_response = self._cluster_api_instance.list_hosts(cluster_name)
+    #     # pprint(api_response)
+    #     return api_response
 
-    def hdfs_metrics(self, key):
+    def hdfs_metrics(self, key, cluster_name):
         """获取指标值
         key为get请求传递的参数，是具体的指标名称
         from_time设定从1个小时前统计
@@ -193,7 +193,7 @@ class HDFSMonitor:
         from_time = datetime.fromtimestamp(time.time() - 7200)
         # to_time = datetime.fromtimestamp(time.time())
         desired_rollup = 'RAW'
-        query = HDFSMonitor._query_dic.get(key)[1]
+        query = HDFSMonitor._query_dic.get(key)[1].format(cluster_name)
         result = self._time_series_api_instance.query_time_series(_from=from_time,
                                                                   query=query,
                                                                   desired_rollup=desired_rollup,
@@ -206,29 +206,32 @@ class HDFSMonitor:
         metrics['displayName'] = HDFSMonitor._query_dic.get(key)[0]
         # 将指标数据的单位存入metrics
         metrics['unit'] = HDFSMonitor._query_dic.get(key)[2]
-        for ts in ts_list.time_series:
+        # for ts in ts_list.time_series:
             # print(
             #     "--- %s: %s ---" %
             #     (ts.metadata.attributes['entityName'], ts.metadata.metric_name)
             # )
-            metrics['entityName'] = ts.metadata.attributes['entityName']
-            metrics['metricName'] = ts.metadata.metric_name
-            # print("开始时间 %s" % self.utc_to_local(ts.metadata.start_time))
-            # 存储指标值的列表
-            temp_timestamp = []
-            temp_value = []
-            for point in ts.data:
-                # print("%s:\t%s" % (self.utc_to_local(point.timestamp), point.value))
-                temp_timestamp.append(point.timestamp)
-                # 将value转化为对应单位的值
-                if metrics['unit'] == "GB":
-                    temp_value.append(point.value / 1024 / 1024 / 1024)
-                elif metrics['unit'] == "us":
-                    temp_value.append(point.value / 1024)
-                else:
-                    temp_value.append(point.value)
-            metrics['timestamp'] = temp_timestamp
-            metrics['value'] = temp_value
+        # time_series中的第一个元素为要获取的指标值
+        ts = ts_list.time_series[0]
+        metrics['entityName'] = ts.metadata.attributes['entityName']
+        metrics['metricName'] = ts.metadata.metric_name
+        # print("开始时间 %s" % self.utc_to_local(ts.metadata.start_time))
+        # 存储指标值的列表
+        temp_timestamp = []
+        temp_value = []
+        for point in ts.data:
+            # print("%s:\t%s" % (point.timestamp, point.value))
+            temp_timestamp.append(point.timestamp)
+            # 将value转化为对应单位的值
+            if metrics['unit'] == "GB":
+                temp_value.append(point.value / 1024 / 1024 / 1024)
+            elif metrics['unit'] == "us":
+                temp_value.append(point.value / 1024)
+            else:
+                temp_value.append(point.value)
+        metrics['timestamp'] = temp_timestamp
+        metrics['value'] = temp_value
+        # 序列化指标数据
         json_metrics = json.dumps(metrics, ensure_ascii=False)
         # print(json_metrics)
         return json_metrics

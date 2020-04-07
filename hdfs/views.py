@@ -99,8 +99,9 @@ def get_hdfs_metrics(request):
     """获取指标数据,get请求参数表示查询什么指标数值
     """
     metric_name = request.GET['metric']
+    cluster_name = request.GET['clusterName']
     instance = HDFSMonitor()
-    context = instance.hdfs_metrics(metric_name)
+    context = instance.hdfs_metrics(metric_name, cluster_name)
     return Response(context)
 
 
