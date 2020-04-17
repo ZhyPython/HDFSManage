@@ -15,7 +15,8 @@ def ssesion_wrapper(func):
         else:
             # 创建session
             request.session['username'] = request.POST['username']
-            request.session.set_expiry(604800)
+            # session过期时间为一天
+            request.session.set_expiry(24 * 60 * 60)
         return func(request)
     return wrapper
 

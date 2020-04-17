@@ -18,7 +18,8 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 
 from login.views import login_view, valid, delete_session, sign_up
-from hdfs import urls as hdfs_urls
+from myhdfs import urls as hdfs_urls
+from ahxinterface import urls as ahx_urls
 
 
 urlpatterns = [
@@ -29,4 +30,5 @@ urlpatterns = [
     path('delete_session/', delete_session, name="delete_session"),
     path('signup/', sign_up, name="sign_up"),
     path('', include(hdfs_urls)),
+    path('', include(ahx_urls))
 ]

@@ -65,7 +65,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'login',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    'myhdfs',
+    'ahxinterface',
 ]
 
 MIDDLEWARE = [

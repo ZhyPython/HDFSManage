@@ -1,0 +1,38 @@
+# -*- coding: UTF-8 -*-
+import sys
+import threading
+
+import pyhdfs
+
+
+class HDFSClient:
+    _instance_lock = threading.Lock()
+
+    def __init__(self, host, user_name='hdfs'):    
+        """ 初始化属性值
+        """
+        self.host = host
+        self.user_name = user_name
+    
+    def get_conn(self):
+        """连接集群
+        """
+        return pyhdfs.HdfsClient(hosts=self.host, user_name=self.user_name)
+    
+    def download_hdfs_file(self, dest, localsrc):
+        """ 下载文件
+        """
+        client = self.get_con()
+        client.copy_to_local(dest, localsrc)
+
+    def upload_hdfs_file(self, localsrc, dest):
+        """ 上传文件
+        """
+        client = self.get_conn()
+        client.copy_from_local(localsrc, dest)
+        
+
+
+if __name__ == "__main__":
+    cli = HDFSClient("192.168.112.101")
+
