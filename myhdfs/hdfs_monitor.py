@@ -157,6 +157,7 @@ class HDFSMonitor:
         """
         # 获取hdfs服务相关属性
         services = self._services_api_instance.read_services(cluster_name)
+        # print(services)
         hdfs = None
         for service in services.items:
             if service.type == 'HDFS':
@@ -245,10 +246,22 @@ class HDFSMonitor:
         local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
         time_str = local_dt.strftime(local_format)
         return datetime.fromtimestamp(int(time.mktime(time.strptime(time_str, local_format))))
+    
+    # def sqoop(self):
+    #     try:
+    #         res = self._services_api_instance.create_sqoop_user_dir_command(
+    #             'Cluster 1',
+    #             'sqoop_client'
+    #         )
+    #         pprint(res)
+    #     except cm_client.rest.ApiException as e:
+    #         print(e)
+
 
 
 if __name__ == "__main__":
     instance = HDFSMonitor()
     clusters = instance.list_clusters()
     # instance.hdfs_metrics('dfs_capacity_used_non_hdfs')
-    instance.list_namenodes('Cluster 1')
+    # instance.list_namenodes('Cluster 1')
+    # instance.sqoop()

@@ -233,3 +233,40 @@ def set_replication(request):
         return Response(status=HTTP_200_OK)
     data = json.loads(response.text)
     return Response(data, status=HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def validate_target_dir(request):
+    """验证sqoop过程中的输出目录是否不存在
+    """
+    host = request.GET['activeNN']
+    target_dir = request.GET['targetDir']
+    url = "http://" + host + ":" + "9870" + "/webhdfs/v1" + target_dir + "?op=LISTSTATUS"
+    # 将返回的信息序列化为一个对象
+    response = json.loads(requests.get(url).text)
+    # 定义返回的消息格式,flag的值表示target_dri是否可用，如果hdfs上不存在，则该目录可用
+    context = {
+        'flag': True
+    }
+    # 解析响应
+    if response.get('FileStatuses'):
+        context['flag'] = False
+    return Response(context)
+
+@api_view(['POST'])
+def sqoop_import(request):
+    """通过sqoop导入数据
+    """
+    cli = SSHClient(request.POST['hostIP'])
+    result = cli.sqoop_pro(
+        request.POST['dbType'],
+        request.POST['hostIP'],
+        request.POST['dbName'],
+        request.POST['username'],
+        request.POST['password'],
+        request.POST['tableName'],
+        request.POST['jobName'],
+        request.POST['targetDir'],
+        request.POST['mapNums']
+    )
+    # todo: 处理sqoop语句执行完的结果
+    return Response(result)

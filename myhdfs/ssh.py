@@ -56,6 +56,40 @@ class SSHClient:
         else:
             # 不存在时创建目录
             result = self.ssh.exec_command("mkdir -p" + " " + path)
+    
+    def sqoop_pro(
+        self,
+        db_type,
+        IP,
+        database,
+        username,
+        password,
+        table,
+        job_name,
+        target_dir,
+        map_nums
+    ):
+        """将数据从MySQL导入到hdfs中
+        IP: 执行命令的主机IP，通常为namemode
+        db_type: 数据库类型，MySQL，SQL server...
+        database: 数据库名
+        username: 远程连接数据库的用户名
+        password: 远程连接数据库的用户名对应的密码
+        table: 数据库中的表名
+        job_name: 设置提交的mapreduce任务名
+        target_dir: 输出文件在hdfs上的目录，必须为不存在的目录，不然会报错
+        map_nums: map的任务数量，决定着输出文件part-m-*的数量
+        """
+        command = "sqoop import" \
+                  + " --connect jdbc:" + db_type + "://" + IP + ":3306/" + database \
+                  + " --username " + username \
+                  + " --password " + password \
+                  + " --table " + table \
+                  + " --job_name " + job_name \
+                  + " --target_dir " + target_dir \
+                  + " --map_nums " + map_nums
+        # stdin, stdout, stderr = self.ssh.exec_command(command)
+        return command
 
 
 if __name__ == "__main__":

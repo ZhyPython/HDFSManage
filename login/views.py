@@ -6,22 +6,7 @@ from .models import UserInfo
 # from .serializers import UserInfoSerializer
 
 
-def ssesion_wrapper(func):
-    """session会话装饰器，登录之前检查session是否有当前用户
-    """
-    def wrapper(request):
-        if request.session.get('username', False):
-            pass
-        else:
-            # 创建session
-            request.session['username'] = request.POST['username']
-            # session过期时间为一天
-            request.session.set_expiry(24 * 60 * 60)
-        return func(request)
-    return wrapper
-
 @api_view(['POST'])
-@ssesion_wrapper
 def login_view(request):
     """登录系统，创建用户
     """
@@ -35,10 +20,15 @@ def login_view(request):
             'info': '当前用户不存在'
         })
     else:
+        # 判断密码是否正确，密码正确则创建session
         if user.password == request.POST['password']:
             context.update({
                 'info': 'success'
             })
+            # 创建session
+            request.session['username'] = request.POST['username']
+            # session过期时间为一天
+            request.session.set_expiry(24 * 60 * 60)
         else:
             context.update({
                 'info': '密码错误'
