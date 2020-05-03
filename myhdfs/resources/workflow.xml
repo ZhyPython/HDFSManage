@@ -1,0 +1,44 @@
+<workflow-app name="sqoop-wf" xmlns="uri:oozie:workflow:0.4">
+    <start to="sqoopjob"/>
+    <action name="sqoopjob">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <!-- <property>
+                  <name>mapred.job.queue.name</name>
+                  <value>${queueName}</value>
+                </property>
+                <property>
+                  <name>hive.metastore.uris</name>
+                  <value>thrift://ip-150:9083</value>
+                </property> -->
+                <property>
+                <name>oozie.launcher.mapreduce.map.memory.mb</name>
+                <value>128</value>
+                </property>
+                <property>
+                    <name>oozie.launcher.mapreduce.map.java.opts</name>
+                    <value>-Xmx777m</value>
+                </property>
+
+                <property>
+                    <name>oozie.launcher.yarn.app.mapreduce.am.resource.mb</name>
+                    <value>128</value>
+                </property>
+                <property>
+                    <name>oozie.launcher.mapreduce.map.java.opts</name>
+                    <value>-Xmx1111m</value>
+                </property>
+            </configuration>
+            
+            <command>import --connect jdbc:mysql://192.168.112.101:3306/test --username root --password 123456 --table runoob_tbl --target-dir /data --m 1</command>
+        </sqoop>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+    <kill name="kill">
+        <message>Sqoop failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

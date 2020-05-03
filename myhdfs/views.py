@@ -1,5 +1,6 @@
 import json
 import re
+import os
 
 import requests
 from django.http import HttpResponse
@@ -10,6 +11,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_403_FORBIDDEN, \
 
 from .hdfs_monitor import HDFSMonitor
 from .ssh import SSHClient
+from .parse_xml import ParserConf
 
 
 # Create your views here.
@@ -254,10 +256,11 @@ def validate_target_dir(request):
 
 @api_view(['POST'])
 def sqoop_import(request):
-    """通过sqoop导入数据
+    """通过sqoop导入数据,判断用户是否为linux的用户，不是则添加
     """
+    # 实例化ssh客户端
     cli = SSHClient(request.POST['hostIP'])
-    result = cli.sqoop_pro(
+    context = cli.sqoop_pro(
         request.POST['dbType'],
         request.POST['hostIP'],
         request.POST['dbName'],
@@ -268,5 +271,60 @@ def sqoop_import(request):
         request.POST['targetDir'],
         request.POST['mapNums']
     )
-    # todo: 处理sqoop语句执行完的结果
-    return Response(result)
+    return Response(context)
+
+# @api_view(['POST'])
+# def sqoop_import(request):
+#     """通过sqoop导入数据
+#     """
+#     host_ip = request.POST['hostIP']
+#     # 拼接sqoop命令字符串
+#     command = "import\n" \
+#               + "--connect\n" \
+#               + "jdbc:" + request.POST['dbType'] + "://" + host_ip + ":3306/" + request.POST['dbName'] + "\n" \
+#               + "--username\n" \
+#               + request.POST['username'] + "\n" \
+#               + "--password\n" \
+#               + request.POST['password'] + "\n" \
+#               + "--table\n" \
+#               + request.POST['tableName'] + "\n" \
+#               + "--mapreduce-job-name\n" \
+#               + request.POST['jobName'] + "\n" \
+#               + "--target-dir\n" \
+#               + request.POST['targetDir'] + "\n" \
+#               + "--m\n" \
+#               + request.POST['mapNums']
+#     # 获取libpath路径
+#     url = "http://" + host_ip + ":11000" + "/oozie/v2/admin/update_sharelib"
+#     response = requests.get(url)
+#     lib_path = json.loads(response.text)['sharelibUpdate']['sharelibDirNew'] + "/sqoop"
+#     # 将路径中的hdfs:nameservice1替换为hdfs:localhost:8020
+#     pattern = r'hdfs://nameservice[0-9]*/'
+#     lib_path = re.sub(pattern, "hdfs://" + host_ip + ":8020/", lib_path)
+#     # 构建xml文件的参数字典
+#     xml_params = {
+#         "fs.default.name": "",
+#         "mapred.job.tracker": "",
+#         "user.name": "",
+#         "oozie.sqoop.command": "",
+#         "oozie.libpath": "",
+#     }
+#     xml_params['fs.default.name'] = "hdfs://" + host_ip + ":8020"
+#     xml_params['mapred.job.tracker'] = host_ip + ":8032"
+#     xml_params['user.name'] = request.POST['sysUser']
+#     xml_params['oozie.sqoop.command'] = command
+#     xml_params['oozie.libpath'] = lib_path
+#     # 获取当文件所在文件夹的绝对路径
+#     current_file_path = os.path.dirname(os.path.abspath(__file__))
+#     # 拼接配置文件的路径，并将\替换为/
+#     resource_file_path = os.path.join(current_file_path, 'resources/config.xml').replace('\\', '/')
+#     xml_parse_cli = ParserConf(resource_file_path)
+#     # 修改文件内容并写入
+#     xml_parse_cli.change_node_text(**xml_params)
+#     xml_parse_cli.write_xml(resource_file_path)
+#     # 发送请求提交任务
+#     headers = {'Content-Type': 'text/xml'}
+#     with open(resource_file_path) as xml:
+#         r = requests.post('http://192.168.112.101:11000/oozie/v1/jobs?jobtype=sqoop', data=xml)
+#         print(r)
+#     return Response(xml_params)

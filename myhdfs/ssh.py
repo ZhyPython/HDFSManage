@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import paramiko
-
+import re
 
 class SSHClient:
     """ssh连接远程虚拟机并执行命令
@@ -43,8 +43,9 @@ class SSHClient:
         error = stderr.read().decode()
         # print("结果", result)
         # print("错误", error)
+        self.ssh.close()
         return result, error
-    
+
     def test_directory(self, path):
         """判断路径是否存在
         """
@@ -56,7 +57,7 @@ class SSHClient:
         else:
             # 不存在时创建目录
             result = self.ssh.exec_command("mkdir -p" + " " + path)
-    
+
     def sqoop_pro(
         self,
         db_type,
@@ -85,14 +86,35 @@ class SSHClient:
                   + " --username " + username \
                   + " --password " + password \
                   + " --table " + table \
-                  + " --job_name " + job_name \
-                  + " --target_dir " + target_dir \
-                  + " --map_nums " + map_nums
-        # stdin, stdout, stderr = self.ssh.exec_command(command)
-        return command
+                  + " --mapreduce-job-name " + job_name \
+                  + " --target-dir " + target_dir \
+                  + " --m " + map_nums
+        self.connect()
+        context = {
+            'job_id': '',
+            'error': ''
+        }
+        try:
+            stdin, stdout, stderr = self.ssh.exec_command(command, get_pty=True)
+            # 输出stdout,获取任务id
+            pattern = r'INFO mapreduce.Job: Running job: (.*)'
+            for line in stdout:
+                # print(line.strip('\n'))
+                # 匹配字符
+                if re.search(pattern, line):
+                    job_id = re.search(pattern, line).group(1).strip()
+                    # 将job_id中的job替换为application
+                    context['jobId'] = re.sub('job', 'application', job_id)
+                    return context
+        except Exception as e:
+            context['error'] = e
+        finally:
+            self.ssh.close()
+        return context
 
 
 if __name__ == "__main__":
-    CLI = SSHClient("192.168.112.103")
+    CLI = SSHClient("192.168.112.101")
     # CLI.exec_download_cmd("/test.xls", "~")
     # CLI.test_directory('/download_hdfs')
+    CLI.sqoop_pro('mysql', '192.168.112.101', 'test', 'root', '123456', 'runoob_tbl', 'sqoop', '/data', '1')
