@@ -3,7 +3,8 @@ from .views import get_hdfs_metrics, get_clusters, get_active_namenode, \
                    get_datanodes, dowanload_file_to_host, upload_file, \
                    download_file, get_block_info, get_hdfs_dir, mkdir, \
                    delete_file, set_permission, set_owner, set_group, \
-                   set_replication, validate_target_dir, sqoop_import
+                   set_replication, validate_target_dir, sqoop_import, \
+                   get_history_job_metrics
 
 urlpatterns = [
     path('get_metrics/', get_hdfs_metrics, name="get_hdfs_metrics"),
@@ -23,4 +24,5 @@ urlpatterns = [
     path('set_replication/', set_replication, name='set_replication'),
     path('validate_target_dir/', validate_target_dir, name='validate_target_dir'),
     path('sqoop_import/', sqoop_import, name="sqoop_import"),
+    path('get_history_job_metrics/', get_history_job_metrics, name="get_history_job_metrics"),
 ]

@@ -45,7 +45,7 @@ def sign_up(request):
     # 获取所有用户名，确保注册用户名不在其中
     users = UserInfo.get_all()
     for user in users:
-        print(user)
+        # print(user)
         if username == user['username']:
             context.update({
                 'info': '用户已存在'

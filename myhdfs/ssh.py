@@ -68,7 +68,8 @@ class SSHClient:
         table,
         job_name,
         target_dir,
-        map_nums
+        map_nums,
+        sys_user
     ):
         """将数据从MySQL导入到hdfs中
         IP: 执行命令的主机IP，通常为namemode
@@ -80,6 +81,7 @@ class SSHClient:
         job_name: 设置提交的mapreduce任务名
         target_dir: 输出文件在hdfs上的目录，必须为不存在的目录，不然会报错
         map_nums: map的任务数量，决定着输出文件part-m-*的数量
+        sys_user: 提交任务的用户
         """
         command = "sqoop import" \
                   + " --connect jdbc:" + db_type + "://" + IP + ":3306/" + database \
@@ -91,10 +93,18 @@ class SSHClient:
                   + " --m " + map_nums
         self.connect()
         context = {
-            'job_id': '',
+            'jobId': '',
             'error': ''
         }
         try:
+            # 检测sys_user是否在linux的用户列表中，不存在则创建
+            res = self.ssh.exec_command(
+                "cat /etc/passwd |awk -F \: '{print $1}' | grep " + sys_user
+            )
+            if res[1].read().decode() == "":
+                _ = self.ssh.exec_command("useradd " + sys_user)
+            # 用指定的用户执行sqoop任务的命令
+            command = "sudo -u " + sys_user + " " + command
             stdin, stdout, stderr = self.ssh.exec_command(command, get_pty=True)
             # 输出stdout,获取任务id
             pattern = r'INFO mapreduce.Job: Running job: (.*)'
@@ -117,4 +127,4 @@ if __name__ == "__main__":
     CLI = SSHClient("192.168.112.101")
     # CLI.exec_download_cmd("/test.xls", "~")
     # CLI.test_directory('/download_hdfs')
-    CLI.sqoop_pro('mysql', '192.168.112.101', 'test', 'root', '123456', 'runoob_tbl', 'sqoop', '/data', '1')
+    # CLI.sqoop_pro('mysql', '192.168.112.101', 'test', 'root', '123456', 'runoob_tbl', 'sqoop', '/data', '1')

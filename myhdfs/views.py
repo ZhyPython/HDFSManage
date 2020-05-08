@@ -1,6 +1,7 @@
 import json
 import re
 import os
+import pprint
 
 import requests
 from django.http import HttpResponse
@@ -12,6 +13,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_403_FORBIDDEN, \
 from .hdfs_monitor import HDFSMonitor
 from .ssh import SSHClient
 from .parse_xml import ParserConf
+from .models import HistoryJob
 
 
 # Create your views here.
@@ -269,9 +271,63 @@ def sqoop_import(request):
         request.POST['tableName'],
         request.POST['jobName'],
         request.POST['targetDir'],
-        request.POST['mapNums']
+        request.POST['mapNums'],
+        request.POST['sysUser']
     )
+    # 将任务id存入数据库
+    if context['jobId'] != '':
+        HistoryJob.add_job(context['jobId'], request.POST['sysUser'])
     return Response(context)
+
+@api_view(['GET'])
+def get_history_job_metrics(request):
+    """通过数据库获取历史任务的ID，并通过yarn rest api拿到历史指标数据
+    """
+    # 获取数据库中的jobs
+    jobs = HistoryJob.get_all()
+    # 获取一个集群中的namenode
+    instance = HDFSMonitor()
+    namenode_list = instance.list_namenodes(request.GET['clusterName'])
+    # 获取哪个namenode的resourcemanager是active状态
+    active_rm = ''
+    res1 = requests.get("http://" + namenode_list[0]['hostIP'] + ":8088" + "/ws/v1/cluster/info")
+    res2 = requests.get("http://" + namenode_list[1]['hostIP'] + ":8088" + "/ws/v1/cluster/info")
+    res1 = json.loads(res1.text)
+    res2 = json.loads(res2.text)
+    if res1['clusterInfo']['haState'] == 'ACTIVE':
+        active_rm = namenode_list[0]['hostIP']
+    if res2['clusterInfo']['haState'] == 'ACTIVE':
+        active_rm = namenode_list[1]['hostIP']
+    # 获取历史任务的数据
+    metrics = []
+    for job in jobs:
+        # 查询历史指标时将job_id中的application替换为job
+        job_id = re.sub('application', 'job', job['job_id'])
+        # 请求history server接口访问数据信息，包括物理内存，虚拟内存，CPU执行时间，（虚拟内存比物理内存多一个交换空间内存量）
+        url1 = "http://192.168.112.101:19888/ws/v1/history/mapreduce/jobs/" \
+              + job_id \
+              + "/counters"
+        response1 = requests.get(url1)
+        job_data1 = json.loads(response1.text)
+        # 取出数据
+        tmp_obj = {}
+        tmp_obj['physicalMemory'] = job_data1['jobCounters']['counterGroup'][2]['counter'][8]['totalCounterValue']
+        tmp_obj['virtualMemory'] = job_data1['jobCounters']['counterGroup'][2]['counter'][9]['totalCounterValue']
+        tmp_obj['cpuMilliSeconds'] = job_data1['jobCounters']['counterGroup'][2]['counter'][7]['totalCounterValue']
+        # 请求active resource manager接口访问数据信息，包括任务状态，任务名称，用户，池，聚合内存，聚合虚拟核心，任务启动时间
+        url2 = "http://" + active_rm + ":8088" + "/ws/v1/cluster/apps/" \
+               + job['job_id']
+        response2 = requests.get(url2)
+        job_data2 = json.loads(response2.text)
+        tmp_obj['state'] = job_data2['app']['finalStatus']
+        tmp_obj['taskName'] = job_data2['app']['name']
+        tmp_obj['user'] = job_data2['app']['user']
+        tmp_obj['queue'] = job_data2['app']['queue']
+        tmp_obj['aggregateMemory'] = job_data2['app']['memorySeconds']
+        tmp_obj['aggregateVcore'] = job_data2['app']['vcoreSeconds']
+        tmp_obj['launchTime'] = job_data2['app']['launchTime']
+        metrics.append({job['job_id']: tmp_obj})
+    return Response(metrics)
 
 # @api_view(['POST'])
 # def sqoop_import(request):
