@@ -127,4 +127,4 @@ if __name__ == "__main__":
     CLI = SSHClient("192.168.112.101")
     # CLI.exec_download_cmd("/test.xls", "~")
     # CLI.test_directory('/download_hdfs')
-    # CLI.sqoop_pro('mysql', '192.168.112.101', 'test', 'root', '123456', 'runoob_tbl', 'sqoop', '/data', '1')
+    # CLI.sqoop_pro('mysql', '192.168.112.102', 'test', 'root', '123456', 'runoob_tbl', 'sqoop', '/data', '1', 'test')
