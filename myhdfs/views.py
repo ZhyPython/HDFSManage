@@ -275,7 +275,7 @@ def sqoop_import(request):
     )
     # 将任务id存入数据库
     if context['jobId'] != '':
-        HistoryJob.add_job(context['jobId'], request.POST['sysUser'])
+        HistoryJob.add_job(context['jobId'], request.POST['sysUser'], request.POST['clusterName'])
     return Response(context)
 
 def get_active_rm(cluster):
@@ -361,8 +361,8 @@ def update_finished_job(request):
 def get_history_job_metrics(request):
     """通过数据库获取历史任务的ID，并通过yarn rest api拿到历史指标数据
     """
-    # 获取数据库中的jobs
-    jobs = HistoryJob.get_all()
+    # 获取数据库中的当前集群的jobs
+    jobs = HistoryJob.get_cluster_jobs(request.GET['clusterName'])
     # 获取active的resource manager
     active_rm = get_active_rm(request.GET['clusterName'])
     # 获取历史任务的数据
