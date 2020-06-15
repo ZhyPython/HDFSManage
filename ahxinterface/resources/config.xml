@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<configuration>
+    <property>
+        <name>oozie.proxysubmission</name>
+        <value>True</value>
+    </property>
+    <property>
+        <name>queueName</name>
+        <value>default</value>
+    </property>
+    <property>
+        <name>oozie.wf.application.path</name>
+        <value>${nameNode}/workspaces/2020/5/28/taskID_01</value>
+    </property>
+    <property>
+        <name>user.name</name>
+        <value>root</value>
+    </property>
+    <property>
+        <name>nameNode</name>
+        <value>hdfs://hadoop1:8020</value>
+    </property>
+    <property>
+        <name>resourceManager</name>
+        <value>hadoop1:8032</value>
+    </property>
+    <property>
+        <name>mapperClass</name>
+        <value>org.apache.oozie.example.SampleMapper</value>
+    </property>
+    <property>
+        <name>reducerClass</name>
+        <value>org.apache.oozie.example.SampleReducer</value>
+    </property>
+    <property>
+        <name>inputDir</name>
+        <value>test/input</value>
+    </property>
+    <property>
+        <name>outputDir</name>
+        <value>user/${user.name}/output/2020/5/28/taskID_01</value>
+    </property>
+</configuration>

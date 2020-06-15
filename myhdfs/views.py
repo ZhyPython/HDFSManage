@@ -45,6 +45,50 @@ def upload_file(request):
     return Response(context)
 
 
+@api_view(['PUT'])
+def up_file(request):
+    """其他系统调用此接口上传文件
+    请求参数为
+        clusterName：集群名称
+        path：上传路径
+        username：用户名
+        file：文件流对象
+    返回结果：
+        成功或失败
+    """
+    context = {}
+    active_nn = None
+    # 获取一个集群中的namenode
+    instance = HDFSMonitor()
+    namenode_list = instance.list_namenodes(request.data['clusterName'])
+    # 两个namenode的IP链接
+    nn1 = "http://" + namenode_list[0]['hostIP'] + ":" + "9870"
+    nn2 = "http://" + namenode_list[1]['hostIP'] + ":" + "9870"
+    response1 = requests.get(nn1 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus")
+    response2 = requests.get(nn2 + "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus")
+    if json.loads(response1.content)['beans'][0]['State'] == 'active':
+        active_nn = namenode_list[0]['hostIP']
+    elif json.loads(response2.content)['beans'][0]['State'] == "active":
+        active_nn = namenode_list[1]['hostIP']
+    else:
+        pass
+    # 用requests库将文件上传到hdfs中
+    url = "http://" + active_nn + ":" + "9870" + "/webhdfs/v1" + request.data['path'] \
+          + "?op=CREATE" \
+          + "&user.name=" + request.data['username'] \
+          + "&overwrite=true"
+    response = requests.put(url, data=request.data['file'])
+    if response.status_code == 201:
+        context.update({
+            'info': 'success'
+        })
+    else:
+        context.update({
+            'info': 'error'
+        })
+    return Response(context)
+
+
 @api_view(['GET'])
 def download_file(request):
     """下载文件
@@ -376,6 +420,23 @@ def get_history_job_metrics(request):
               + "/counters"
         response1 = requests.get(url1)
         job_data1 = json.loads(response1.text)
+        print(job_id)
+        # 如果当前任务未查询到数据，将数据赋值为 "未查询到数据" 并跳过此次循环
+        if job_data1.get('RemoteException', None):
+            tmp_obj = {
+                'physicalMemory': "未查询到数据",
+                'virtualMemory': "未查询到数据",
+                'cpuMilliSeconds': "未查询到数据",
+                'state': 'NOT_FOUND',
+                'taskName': "未查询到数据",
+                'user': "未查询到数据",
+                'queue': "未查询到数据",
+                'aggregateMemory': "未查询到数据",
+                'aggregateVcore': "未查询到数据",
+                'launchTime': "未查询到数据"
+            }
+            metrics.append({job['job_id']: tmp_obj})
+            continue
         # 取出数据
         tmp_obj = {}
         tmp_obj['physicalMemory'] = job_data1['jobCounters']['counterGroup'][2]['counter'][8]['totalCounterValue']

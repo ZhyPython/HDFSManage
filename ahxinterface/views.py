@@ -1,9 +1,14 @@
 import json
+import requests
+import os
+import re
+from datetime import datetime
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .cm_info import CMInfo
 from .hdfs_client import HDFSClient
+from .parse_xml import ParserConf
 
 
 # Create your views here.
@@ -53,18 +58,68 @@ def download_file(request):
     hdfs_client.download_hdfs_file(file_hdfs_path, file_local_path)
     return Response()
 
-@api_view(['PUT'])
+@api_view(['POST'])
 def invoke_agent(request):
     """向计算代理服务器发送计算信息
     接收的json串为：
         {"taskID": "", "algorithm": "", "inputVariableList": [], "isGpu": "false"}
-        输入列表中的对象为：
+        inputVariableList输入列表中的对象为：
             {"variableName": "", "variableHDPath": ""}
     返回的信息：
         {"taskID": "", "status": , "errorMsg": "", "outputVariableList": []}
-        输出列表中的对象为：
+        outputVariableList输出列表中的对象为：
             {"variableName": "", "variableHDPath": ""}
     """
+    # 获取active的namenode的主机名
+    cm_info_ins = CMInfo()
+    activeNN = cm_info_ins.get_activeNN()
+    active_host = activeNN['hostName']
+    
+    # 获取当前文件所在文件夹的绝对路径
+    current_file_path = os.path.dirname(os.path.abspath(__file__))
+    # 拼接本地config配置文件的路径，并将\替换为/
+    config_file_path = os.path.join(current_file_path, 'resources/config.xml').replace('\\', '/')
+    # 拼接本地workflow配置文件的路径
+    workflow_file_path = os.path.join(current_file_path, 'resources/workflow.xml').replace('\\', '/')
+
+    # 构建年月日递进目录格式
+    date_dir = str(datetime.now().year) + '/' + str(datetime.now().month) + '/' + str(datetime.now().day) + '/'
+    # hdfs上的workflow路径，必须和jar包所在lib目录平级
+    workflow_hdfs_path = "${nameNode}/workspaces/" \
+                         + date_dir \
+                         + "taskID_" + request.data['taskID'],
+    # 构建xml文件的参数字典，向config.xml文件写入配置
+    xml_params = {
+        "oozie.wf.application.path": workflow_hdfs_path,
+        "user.name": "root",
+        "nameNode": "hdfs://" + active_host + ":8020",
+        "resourceManager": active_host + ":8032",
+        "mapperClass": "org.apache.oozie.example.SampleMapper",
+        "reducerClass": "org.apache.oozie.example.SampleReducer",
+        "inputDir": "test/input",
+        "outputDir": "user/${user.name}/output/" \
+                     + date_dir
+                     + "taskID_" + request.data['taskID'],
+    }
+    xml_parse_cli = ParserConf(config_file_path)
+    # 修改文件内容并写入
+    xml_parse_cli.change_node_text(**xml_params)
+    xml_parse_cli.write_xml(config_file_path)
+
+    # 上传workflow.xml文件
+    hdfs_client = HDFSClient("http://" + active_host + ":9870")
+    _ = hdfs_client.upload_hdfs_file(workflow_hdfs_path, workflow_file_path)
+
+    # 获取config.xml文件的配置内容
+    with open(config_file_path, encoding='utf-8') as fp:
+        body = fp.read()
+
+    url = "http://" + active_host + ":11000/oozie/v2/jobs?action=start"
+    r = requests.post(url, data=body.encode("utf-8"), headers={'Content-Type': 'application/xml'})
+    # print(r.text)
+
+    # 获取任务结果并返回,首先获取luancher状态，若为failed，则直接返回failed，再获取实际job状态
+
     return Response()
 
 def append_path(*strs):
