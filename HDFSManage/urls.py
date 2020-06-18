@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 
-from login.views import login_view, valid, delete_session, sign_up
+from login import urls as login_urls
 from myhdfs import urls as hdfs_urls
 from ahxinterface import urls as ahx_urls
 
@@ -25,10 +25,7 @@ from ahxinterface import urls as ahx_urls
 urlpatterns = [
     path('', TemplateView.as_view(template_name='index.html'), name='index'),
     path('admin/', admin.site.urls),
-    path('login/', login_view, name="login"),
-    path('valid/', valid, name="valid"),
-    path('delete_session/', delete_session, name="delete_session"),
-    path('signup/', sign_up, name="sign_up"),
+    path('', include(login_urls)),
     path('', include(hdfs_urls)),
     path('', include(ahx_urls))
 ]
