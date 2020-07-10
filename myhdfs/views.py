@@ -108,6 +108,19 @@ def get_block_info(request):
     return Response(data)
 
 
+@api_view(['GET'])
+def get_file_details(request):
+    """预览文件内容
+    """
+    context = {}
+    host = request.GET['activeNN']
+    url = "http://" + host + ":" + "9870"
+    url += request.GET['url']
+    response = requests.get(url)
+    data = response.text
+    return Response(data)
+
+
 @api_view(['PUT'])
 def mkdir(request):
     """在hdfs上新建文件夹

@@ -5,7 +5,7 @@ from .views import get_hdfs_metrics, get_clusters, get_active_namenode, \
                    delete_file, set_permission, set_owner, set_group, \
                    set_replication, validate_target_dir, sqoop_import, \
                    get_history_job_metrics, get_current_job_metrics, \
-                   update_finished_job, up_file
+                   update_finished_job, up_file, get_file_details
 
 urlpatterns = [
     path('get_metrics/', get_hdfs_metrics, name="get_hdfs_metrics"),
@@ -17,6 +17,7 @@ urlpatterns = [
     path('up_file/', up_file, name="up_file"),
     path('download_file/', download_file, name='download_file'),
     path('get_block_info/', get_block_info, name='get_block_info'),
+    path('get_file_details/', get_file_details, name='get_file_details'),
     path('get_hdfs_dir/', get_hdfs_dir, name='get_hdfs_dir'),
     path('mkdir/', mkdir, name='mkdir'),
     path('delete_file/', delete_file, name='delete_file'),
