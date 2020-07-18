@@ -20,10 +20,23 @@ from .models import HistoryJob
 def get_hdfs_dir(request):
     """获取hdfs目录信息
     """
+    context = {
+        'flag': True,
+        'data': None
+    }
     host = "http://" + request.GET['activeNN'] + ":" + "9870"
     response = requests.get(host + request.GET['url'])
     data = json.loads(response.text)
-    return Response(data)
+    # print(data)
+    if data.get('FileStatuses'):
+        context['data'] = data
+    if data.get('RemoteException'):
+        context['flag'] = False
+        # 错误信息
+        msg = data['RemoteException']['message']
+        msg = re.match(r'File (.*) does not exist.', msg).group(1)
+        context['data'] = '文件 ' + msg + ' 不存在'
+    return Response(context)
 
 
 @api_view(['PUT'])
