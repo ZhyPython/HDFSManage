@@ -12,7 +12,7 @@ from .parse_xml import ParserConf
 
 
 # Create your views here.
-@api_view(['PUT'])
+@api_view(['POST'])
 def upload_file(request):
     """将文件上传至集群
     上传文件的信息为:

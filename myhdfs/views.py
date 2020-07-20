@@ -35,11 +35,11 @@ def get_hdfs_dir(request):
         # 错误信息
         msg = data['RemoteException']['message']
         msg = re.match(r'File (.*) does not exist.', msg).group(1)
-        context['data'] = '文件 ' + msg + ' 不存在'
+        context['data'] = '目录 ' + msg + ' 不存在'
     return Response(context)
 
 
-@api_view(['PUT'])
+@api_view(['POST'])
 def upload_file(request):
     """上传文件到hdfs
     """
@@ -58,7 +58,7 @@ def upload_file(request):
     return Response(context)
 
 
-@api_view(['PUT'])
+@api_view(['POST'])
 def up_file(request):
     """其他系统调用此接口上传文件
     请求参数为
