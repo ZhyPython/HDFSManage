@@ -1,5 +1,7 @@
 /venv/
 /dist/
 __pycache__/
-migrations/
-!__init__.py
+
+**/migrations/00*
+
+
