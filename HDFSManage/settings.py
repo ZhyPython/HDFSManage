@@ -163,3 +163,12 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
+# 自定义设置
+# CM 连接配置
+CM_USERNAME = 'admin'
+CM_PASSWORD = 'admin'
+CM_API_HOST = 'http://192.168.112.101'
+CM_PORT = '7180'
+CM_API_VERSION = 'v30'
+# 历史任务IP端口
+JOBHISTORY_IP = 'http://192.168.112.101:19888'

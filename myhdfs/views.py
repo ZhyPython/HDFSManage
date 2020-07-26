@@ -3,6 +3,7 @@ import re
 import os
 
 import requests
+from django.conf import settings
 from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -404,9 +405,9 @@ def update_finished_job(request):
     # 查询历史指标时将job_id中的application替换为job
     job_id = re.sub('application', 'job', app_id)
     # 请求history server接口访问数据信息，包括物理内存，虚拟内存，CPU执行时间，（虚拟内存比物理内存多一个交换空间内存量）
-    url1 = "http://192.168.112.101:19888/ws/v1/history/mapreduce/jobs/" \
-            + job_id \
-            + "/counters"
+    url1 = settings.JOBHISTORY_IP + "/ws/v1/history/mapreduce/jobs/" \
+           + job_id \
+           + "/counters"
     response1 = requests.get(url1)
     job_data1 = json.loads(response1.text)
     # 取出数据
@@ -441,9 +442,9 @@ def get_history_job_metrics(request):
         # 查询历史指标时将job_id中的application替换为job
         job_id = re.sub('application', 'job', job['job_id'])
         # 请求history server接口访问数据信息，包括物理内存，虚拟内存，CPU执行时间，（虚拟内存比物理内存多一个交换空间内存量）
-        url1 = "http://192.168.112.101:19888/ws/v1/history/mapreduce/jobs/" \
-              + job_id \
-              + "/counters"
+        url1 = settings.JOBHISTORY_IP + "/ws/v1/history/mapreduce/jobs/" \
+               + job_id \
+               + "/counters"
         response1 = requests.get(url1)
         job_data1 = json.loads(response1.text)
         print(job_id)

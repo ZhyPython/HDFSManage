@@ -4,6 +4,7 @@ import threading
 import time
 import json
 
+from django.conf import settings
 from pprint import pprint
 import cm_client
 import pytz
@@ -15,11 +16,11 @@ class HDFSMonitor:
     _instance_lock = threading.Lock()
 
     # API连接属性
-    cm_client.configuration.username = 'admin'
-    cm_client.configuration.password = 'admin'
-    _api_host = 'http://192.168.112.101'
-    _port = '7180'
-    _api_version = 'v30'
+    cm_client.configuration.username = settings.CM_USERNAME
+    cm_client.configuration.password = settings.CM_PASSWORD
+    _api_host = settings.CM_API_HOST
+    _port = settings.CM_PORT
+    _api_version = settings.CM_API_VERSION
 
     # 查询指标时的query语句,扩展指标时，只需添加 “指标名：元组” ，元组中为显示名称、
     # 查询语句和单位
@@ -127,6 +128,7 @@ class HDFSMonitor:
         """初始化连接，构建cm的连接实例
         """
         url = host + ':' + port + '/api/' + version
+        print(url)
         client = cm_client.ApiClient(url)
         # 生成资源API
         self._cluster_api_instance = cm_client.ClustersResourceApi(client)
