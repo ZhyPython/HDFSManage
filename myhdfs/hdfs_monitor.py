@@ -128,7 +128,6 @@ class HDFSMonitor:
         """初始化连接，构建cm的连接实例
         """
         url = host + ':' + port + '/api/' + version
-        print(url)
         client = cm_client.ApiClient(url)
         # 生成资源API
         self._cluster_api_instance = cm_client.ClustersResourceApi(client)

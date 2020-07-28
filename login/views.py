@@ -92,6 +92,16 @@ def delete_session(request):
     request.session.flush()
     return Response()
 
+@api_view(['POST'])
+def modify_passwd(request):
+    """修改密码
+    """
+    context = {}
+    username = request.data['username']
+    passwd = request.data['passwd']
+    UserInfo.modify_passwd(username, passwd)
+    return Response(context)
+
 @api_view(['GET'])
 def check_admin_user(request):
     """检查当前用户是否是管理员

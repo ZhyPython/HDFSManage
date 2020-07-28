@@ -59,6 +59,10 @@ class UserInfo(models.Model):
         obj = cls.objects.create(username=username, password=password, accepted=accepted)
         return obj
     
+    @classmethod
+    def modify_passwd(cls, username, password):
+        cls.objects.filter(username=username).update(password=password)
+    
     class Meta:
         ordering = ['-create_date']
         verbose_name = verbose_name_plural = '用户'
@@ -80,8 +84,11 @@ class RolePrivilege(models.Model):
     )
 
     role_name = models.PositiveIntegerField(default=ROLE_USER, choices=ROLE_ITEM ,verbose_name="角色名")
+    # 查看用户的权限
     view_users = models.IntegerField(default=PRIVILEGE_NOT_HOLD, choices=PRIVILEGE_ITEM, verbose_name="查看用户的权限")
+    # 删除用户的权限
     delete_user = models.IntegerField(default=PRIVILEGE_NOT_HOLD, choices=PRIVILEGE_ITEM, verbose_name="删除用户的权限")
+    # 启用和禁用用户的权限
     add_user = models.IntegerField(default=PRIVILEGE_NOT_HOLD, choices=PRIVILEGE_ITEM, verbose_name='将用户添加进系统')
     user = models.ManyToManyField(UserInfo, related_name="role",verbose_name="用户")
 
