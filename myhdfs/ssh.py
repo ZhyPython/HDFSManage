@@ -60,8 +60,11 @@ class SSHClient:
 
     def sqoop_pro(
         self,
-        db_type,
         IP,
+        db_type,
+        connect_type,
+        connect_name,
+        db_host_ip,
         database,
         username,
         password,
@@ -73,7 +76,10 @@ class SSHClient:
     ):
         """将数据从MySQL导入到hdfs中
         IP: 执行命令的主机IP，通常为namemode
-        db_type: 数据库类型，MySQL，SQL server...
+        db_type: 数据库类型，MySQL，SQL server，Oracle...
+        connect_type: Oracle的连接方式
+        connect_name: Oracle的连接名称
+        db_host_ip: 数据库所在主机的IP地址
         database: 数据库名
         username: 远程连接数据库的用户名
         password: 远程连接数据库的用户名对应的密码
@@ -83,14 +89,39 @@ class SSHClient:
         map_nums: map的任务数量，决定着输出文件part-m-*的数量
         sys_user: 提交任务的用户
         """
-        command = "sqoop import" \
-                  + " --connect jdbc:" + db_type + "://" + IP + ":3306/" + database \
-                  + " --username " + username \
-                  + " --password " + password \
-                  + " --table " + table \
-                  + " --mapreduce-job-name " + job_name \
-                  + " --target-dir " + target_dir \
-                  + " --m " + map_nums
+        # 根据数据库类型判断command
+        command = ''
+        if db_type == 'mysql':
+            command = "sqoop import" \
+                    + " --connect jdbc:" + db_type + "://" + db_host_ip + ":3306/" + database \
+                    + " --username " + username \
+                    + " --password " + password \
+                    + " --table " + table \
+                    + " --mapreduce-job-name " + job_name \
+                    + " --target-dir " + target_dir \
+                    + " --m " + map_nums
+        if db_type == 'sqlserver':
+            command = "sqoop import" \
+                    + " --driver com.microsoft.sqlserver.jdbc.SQLServerDriver" \
+                    + " --connect \"jdbc:" + db_type + "://" + db_host_ip + ":1433;database=" + database + "\"" \
+                    + " --username " + username \
+                    + " --password " + password \
+                    + " --table " + table \
+                    + " --mapreduce-job-name " + job_name \
+                    + " --target-dir " + target_dir \
+                    + " --m " + map_nums
+        if db_type == 'oracle':
+            symbol = "/" if connect_type == 'serviceName' else ":"
+            command = "sqoop import" \
+                    + " --connect jdbc:oracle:thin:@" + db_host_ip + ":1521" + symbol + connect_name \
+                    + " --username " + username \
+                    + " --password " + password \
+                    + " --table " + database + '.' + table \
+                    + " --mapreduce-job-name " + job_name \
+                    + " --target-dir " + target_dir \
+                    + " --m " + map_nums
+        
+        print(command)
         self.connect()
         context = {
             'jobId': '',
@@ -108,6 +139,7 @@ class SSHClient:
             stdin, stdout, stderr = self.ssh.exec_command(command, get_pty=True)
             # 输出stdout,获取任务id
             pattern = r'INFO mapreduce.Job: Running job: (.*)'
+            pattern_err = r'ERROR manager.SqlManager: Error executing statement: java.sql.SQLException: (.*)'
             for line in stdout:
                 # print(line.strip('\n'))
                 # 匹配字符
@@ -115,6 +147,11 @@ class SSHClient:
                     job_id = re.search(pattern, line).group(1).strip()
                     # 将job_id中的job替换为application
                     context['jobId'] = re.sub('job', 'application', job_id)
+                    return context
+                # 匹配报错信息
+                if re.search(pattern_err, line):
+                    context_err = re.search(pattern_err, line).group(1).strip()
+                    context['error'] = context_err
                     return context
         except Exception as e:
             context['error'] = e

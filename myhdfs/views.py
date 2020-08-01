@@ -333,8 +333,11 @@ def sqoop_import(request):
     # 实例化ssh客户端
     cli = SSHClient(request.POST['hostIP'])
     context = cli.sqoop_pro(
-        request.POST['dbType'],
         request.POST['hostIP'],
+        request.POST['dbType'],
+        request.POST['connectType'],
+        request.POST['connectName'],
+        request.POST['dbHostIP'],
         request.POST['dbName'],
         request.POST['username'],
         request.POST['password'],
