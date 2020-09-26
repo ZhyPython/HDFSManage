@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import login_view, valid, delete_session, sign_up, \
                    list_users, enable_user, disable_user, delete_user, \
-                   check_admin_user, modify_passwd
+                   check_admin_user, modify_passwd, init_super_admin, \
+                   check_has_super_admin
 
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path('delete_user/', delete_user, name="delete_user"),
     path('check_admin_user/', check_admin_user, name="check_admin_user"),
     path('modify_passwd/', modify_passwd, name="modify_passwd"),
+    path('init_super_admin/', init_super_admin, name="init_super_admin"),
+    path('check_has_super_admin/', check_has_super_admin, name="check_has_super_admin"),
 ]

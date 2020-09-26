@@ -2,7 +2,7 @@ from django.db import models
 import re
 
 
-__all__ = ['UserInfo', 'RolePrivilege', 'admin_role', 'user_role']
+__all__ = ['UserInfo', 'RolePrivilege']
 
 # Create your models here.
 class UserInfo(models.Model):
@@ -96,17 +96,10 @@ class RolePrivilege(models.Model):
     def create_role(cls, role_name, view_users, delete_user, add_user):
         obj = cls.objects.create(role_name=role_name, view_users=view_users, delete_user=delete_user, add_user=add_user)
         return obj
-
-
-# 初始化模块时，添加admin管理员用户，并赋予权限，导出时将管理员和普通用户对象也导出
-# 先检查是否存在admin用户，避免多次import本文件时重复创建用户导致报错
-admin_role = None
-user_role = None
-if not UserInfo.user_exits('admin'):
-    admin_user = UserInfo.create_user('admin', 'admin', 0)
-    admin_role = RolePrivilege.create_role(0, 0, 0, 0)
-    user_role = RolePrivilege.create_role(1, -1, -1, -1)
-    admin_role.user.add(admin_user)
-else:
-    admin_role = RolePrivilege.objects.get(role_name=0)
-    user_role = RolePrivilege.objects.get(role_name=1)
+    
+    @classmethod
+    def admin_role_exits(cls, role_name):
+        """判断管理员角色是否存在，返回True或False
+        """
+        flag = cls.objects.filter(role_name=role_name).exists()
+        return flag

@@ -2,8 +2,11 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from .models import UserInfo, RolePrivilege, admin_role, user_role
+from .models import UserInfo, RolePrivilege 
 # from .serializers import UserInfoSerializer
+
+
+admin_role = user_role = None
 
 
 @api_view(['POST'])
@@ -91,6 +94,32 @@ def delete_session(request):
     # flush会删除DB中的具体session记录
     request.session.flush()
     return Response()
+
+@api_view(['GET'])
+def check_has_super_admin(request):
+    """检查是否有超级管理员
+    """
+    if not RolePrivilege.admin_role_exits(0):
+        return Response({'flag': False})
+    return Response({'flag': True})
+
+@api_view(['POST'])
+def init_super_admin(request):
+    """初始化超级管理员
+    """
+    username = request.data['superAdminName']
+    passwd = request.data['superAdminPassword']
+    # 初始化管理员用户角色
+    init_admin_user = UserInfo.create_user(username, passwd, 0)
+    init_admin_role = RolePrivilege.create_role(0, 0, 0, 0)
+    init_admin_role.user.add(init_admin_user)
+
+    # 为全局的管理员用户和普通用户赋值
+    global admin_role, user_role
+    admin_role = init_admin_role
+    user_role = RolePrivilege.create_role(1, -1, -1, -1)
+
+    return Response({'flag': True})
 
 @api_view(['POST'])
 def modify_passwd(request):

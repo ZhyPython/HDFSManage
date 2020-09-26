@@ -450,7 +450,7 @@ def get_history_job_metrics(request):
                + "/counters"
         response1 = requests.get(url1)
         job_data1 = json.loads(response1.text)
-        print(job_id)
+        # print(job_id)
         # 如果当前任务未查询到数据，将数据赋值为 "未查询到数据" 并跳过此次循环
         if job_data1.get('RemoteException', None):
             tmp_obj = {
