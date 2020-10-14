@@ -93,6 +93,11 @@ class RolePrivilege(models.Model):
     user = models.ManyToManyField(UserInfo, related_name="role",verbose_name="用户")
 
     @classmethod
+    def get_role(cls, role_name):
+        role = cls.objects.get(role_name=role_name)
+        return role
+
+    @classmethod
     def create_role(cls, role_name, view_users, delete_user, add_user):
         obj = cls.objects.create(role_name=role_name, view_users=view_users, delete_user=delete_user, add_user=add_user)
         return obj

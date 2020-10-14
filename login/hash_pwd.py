@@ -17,3 +17,7 @@ def hash_salt_pwd(pwd, salt):
     salt_pwd = salt + pwd
     sha256_pwd = hashlib.sha256(salt_pwd.encode()).hexdigest()
     return sha256_pwd
+
+
+if __name__ == "__main__":
+    print(hash_salt_pwd('a9abe05543b7763756d79a7172d6639978586847461e3813f99341d96c9308b7', get_random_salt()))

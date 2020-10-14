@@ -23,6 +23,10 @@ class HistoryJob(models.Model):
     def get_cluster_jobs(cls, cluster_name):
         jobs = cls.objects.filter(cluster_name=cluster_name).values('job_id')
         return jobs
+    
+    @classmethod
+    def get_user_jobs(cls, job_user):
+        return cls.objects.filter(job_user=job_user).values('job_id')
 
     class Meta:
         ordering = ['-create_date']

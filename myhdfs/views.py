@@ -435,8 +435,14 @@ def update_finished_job(request):
 def get_history_job_metrics(request):
     """通过数据库获取历史任务的ID，并通过yarn rest api拿到历史指标数据
     """
+    # 判断当前用户是否是超级用户，若为超级用户则查询所有任务，若不是则列出当前用户提交过的任务
+    from login.views import check_admin_user 
+    check_admin_func_res = check_admin_user(request._request)
     # 获取数据库中的当前集群的jobs
-    jobs = HistoryJob.get_cluster_jobs(request.GET['clusterName'])
+    if check_admin_func_res.data['flag'] == 0:
+        jobs = HistoryJob.get_cluster_jobs(request.GET['clusterName'])
+    else:
+        jobs = HistoryJob.get_user_jobs(request.GET['username'])
     # 获取active的resource manager
     active_rm = get_active_rm(request.GET['clusterName'])
     # 获取历史任务的数据
@@ -542,3 +548,13 @@ def get_history_job_metrics(request):
 #         r = requests.post('http://192.168.112.101:11000/oozie/v1/jobs?jobtype=sqoop', data=xml)
 #         print(r)
 #     return Response(xml_params)
+
+# @api_view(['GET'])
+# def test_forward(request):
+#     """请求转发,request._request属性传入函数中进行接口请求
+#     """
+#     username = request.GET['username']
+#     from login.views import check_admin_user 
+#     res = check_admin_user(request._request)
+#     print(res.data['flag'])
+#     return res

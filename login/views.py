@@ -6,7 +6,8 @@ from .models import UserInfo, RolePrivilege
 # from .serializers import UserInfoSerializer
 
 
-admin_role = user_role = None
+admin_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(0)
+user_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(1)
 
 
 @api_view(['POST'])
@@ -113,6 +114,10 @@ def init_super_admin(request):
     init_admin_user = UserInfo.create_user(username, passwd, 0)
     init_admin_role = RolePrivilege.create_role(0, 0, 0, 0)
     init_admin_role.user.add(init_admin_user)
+
+    # 初始化hdfs超级管理员
+    hdfs_user = UserInfo.create_user('hdfs', request.data['hdfsPasswd'], 0)
+    init_admin_role.user.add(hdfs_user)
 
     # 为全局的管理员用户和普通用户赋值
     global admin_role, user_role
