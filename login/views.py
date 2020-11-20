@@ -6,8 +6,8 @@ from .models import UserInfo, RolePrivilege
 # from .serializers import UserInfoSerializer
 
 
-admin_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(0)
-user_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(1)
+# admin_role = None
+# user_role = None
 
 
 @api_view(['POST'])
@@ -63,6 +63,9 @@ def sign_up(request):
     user = UserInfo.create_user(username, password)
     # 添加权限关系
     # print(user_role)
+    # global user_role
+    # user_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(1)
+    user_role = RolePrivilege.get_role(1)
     user.role.add(user_role)
     context.update({
         'info': 'success'
@@ -120,8 +123,10 @@ def init_super_admin(request):
     init_admin_role.user.add(hdfs_user)
 
     # 为全局的管理员用户和普通用户赋值
-    global admin_role, user_role
-    admin_role = init_admin_role
+    # global admin_role, user_role
+    # admin_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(0)
+    # user_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(1)
+    # admin_role = init_admin_role
     user_role = RolePrivilege.create_role(1, -1, -1, -1)
 
     return Response({'flag': True})
@@ -239,6 +244,9 @@ def delete_user(request):
     """删除账号
     """
     context = {}
+    # global user_role
+    # user_role = None if not RolePrivilege.objects.all() else RolePrivilege.get_role(1)
+    user_role = RolePrivilege.get_role(1)
     # 传输的数据格式应该是列表
     current_user = request.data['currentUser']
     users = request.data['users']
